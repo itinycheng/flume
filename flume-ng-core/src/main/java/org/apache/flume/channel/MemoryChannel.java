@@ -185,6 +185,7 @@ public class MemoryChannel extends BasicChannelSemantics {
   // it should never be held through a blocking operation
   private Object queueLock = new Object();
 
+    // TODO: 2016/11/17 tiny - default 100
   @GuardedBy(value = "queueLock")
   private LinkedBlockingDeque<Event> queue;
 
@@ -192,6 +193,7 @@ public class MemoryChannel extends BasicChannelSemantics {
   // we maintain the remaining permits = queue.remaining - takeList.size()
   // this allows local threads waiting for space in the queue to commit without denying access to the
   // shared lock to threads that would make more space on the queue
+    // TODO: 2016/11/17 tiny - queue容量管控
   private Semaphore queueRemaining;
 
   // used to make "reservations" to grab data from the queue.
@@ -223,6 +225,7 @@ public class MemoryChannel extends BasicChannelSemantics {
   @Override
   public void configure(Context context) {
     Integer capacity = null;
+    // TODO: 2016/11/17 tiny - default Capacity
     try {
       capacity = context.getInteger("capacity", defaultCapacity);
     } catch (NumberFormatException e) {
@@ -236,6 +239,7 @@ public class MemoryChannel extends BasicChannelSemantics {
       LOGGER.warn("Invalid capacity specified, initializing channel to "
           + "default capacity of {}", defaultCapacity);
     }
+    // TODO: 2016/11/17 tiny - default Trans Capacity
     try {
       transCapacity = context.getInteger("transactionCapacity", defaultTransCapacity);
     } catch (NumberFormatException e) {
@@ -249,6 +253,7 @@ public class MemoryChannel extends BasicChannelSemantics {
       LOGGER.warn("Invalid transation capacity specified, initializing channel"
           + " to default capacity of {}", defaultTransCapacity);
     }
+    // TODO: 2016/11/17 tiny - transCapacity smaller than capacity
     Preconditions.checkState(transCapacity <= capacity,
         "Transaction Capacity of Memory Channel cannot be higher than " +
             "the capacity.");
@@ -311,7 +316,7 @@ public class MemoryChannel extends BasicChannelSemantics {
         }
       }
     }
-
+    // TODO: 2016/11/17 tiny - new channel counter
     if (channelCounter == null) {
       channelCounter = new ChannelCounter(getName());
     }
@@ -345,12 +350,14 @@ public class MemoryChannel extends BasicChannelSemantics {
     }
   }
 
+  // TODO: 2016/11/17 tiny - memoryChannel只需要初始化数据存储队列即可，已在configure完成
   @Override
   public synchronized void start() {
     channelCounter.start();
     channelCounter.setChannelSize(queue.size());
     channelCounter.setChannelCapacity(Long.valueOf(
             queue.size() + queue.remainingCapacity()));
+      // TODO: 2016/11/17 tiny - change channel-state to START
     super.start();
   }
 

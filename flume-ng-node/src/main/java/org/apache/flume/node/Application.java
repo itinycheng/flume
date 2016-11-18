@@ -23,18 +23,8 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.flume.Channel;
-import org.apache.flume.Constants;
-import org.apache.flume.Context;
-import org.apache.flume.SinkRunner;
-import org.apache.flume.SourceRunner;
+import org.apache.commons.cli.*;
+import org.apache.flume.*;
 import org.apache.flume.instrumentation.MonitorService;
 import org.apache.flume.instrumentation.MonitoringType;
 import org.apache.flume.lifecycle.LifecycleAware;
@@ -46,12 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 
 public class Application {
 
@@ -70,18 +56,23 @@ public class Application {
     this(new ArrayList<LifecycleAware>(0));
   }
 
+  // TODO: 2016/11/15 tiny - 构造函数，默认用LifecycleSupervisor
   public Application(List<LifecycleAware> components) {
     this.components = components;
     supervisor = new LifecycleSupervisor();
   }
 
+  // TODO: 2016/11/15 tiny -
   public synchronized void start() {
+    // TODO: 2016/11/15 tiny - 遍历添加组件列表，启动监督
     for (LifecycleAware component : components) {
+      //// TODO: 2016/11/15 tiny - 默认AlwaysRestartPolicy策略
       supervisor.supervise(component,
           new SupervisorPolicy.AlwaysRestartPolicy(), LifecycleState.START);
     }
   }
 
+  // TODO: 2016/11/17 tiny - EventBus's event callback function
   @Subscribe
   public synchronized void handleConfigurationEvent(MaterializedConfiguration conf) {
     stopAllComponents();
@@ -97,6 +88,7 @@ public class Application {
 
   private void stopAllComponents() {
     if (this.materializedConfiguration != null) {
+      // TODO: 2016/11/17 tiny - stop source,sink,channel
       logger.info("Shutting down configuration: {}", this.materializedConfiguration);
       for (Entry<String, SourceRunner> entry :
            this.materializedConfiguration.getSourceRunners().entrySet()) {
@@ -128,6 +120,7 @@ public class Application {
         }
       }
     }
+    // TODO: 2016/11/17 tiny - stop monitor
     if (monitorServer != null) {
       monitorServer.stop();
     }
@@ -135,9 +128,10 @@ public class Application {
 
   private void startAllComponents(MaterializedConfiguration materializedConfiguration) {
     logger.info("Starting new configuration:{}", materializedConfiguration);
-
+    // TODO: 2016/11/17 tiny - start all components
     this.materializedConfiguration = materializedConfiguration;
 
+    // TODO: 2016/11/17 tiny - start channels
     for (Entry<String, Channel> entry :
         materializedConfiguration.getChannels().entrySet()) {
       try {
@@ -166,6 +160,7 @@ public class Application {
       }
     }
 
+    // TODO: 2016/11/17 tiny - start sinks
     for (Entry<String, SinkRunner> entry : materializedConfiguration.getSinkRunners().entrySet()) {
       try {
         logger.info("Starting Sink " + entry.getKey());
@@ -176,6 +171,7 @@ public class Application {
       }
     }
 
+    // TODO: 2016/11/17 tiny - start sources
     for (Entry<String, SourceRunner> entry :
          materializedConfiguration.getSourceRunners().entrySet()) {
       try {
@@ -192,6 +188,8 @@ public class Application {
 
   @SuppressWarnings("unchecked")
   private void loadMonitoring() {
+    // TODO: 2016/11/17 tiny - monitor
+    // TODO: 2016/11/17 tiny - get system properties
     Properties systemProps = System.getProperties();
     Set<String> keys = systemProps.stringPropertyNames();
     try {
@@ -199,6 +197,7 @@ public class Application {
         String monitorType = systemProps.getProperty(CONF_MONITOR_CLASS);
         Class<? extends MonitorService> klass;
         try {
+          // TODO: 2016/11/17 tiny - GangliaServer, HTTPMetricsServer
           //Is it a known type?
           klass = MonitoringType.valueOf(
               monitorType.toUpperCase(Locale.ENGLISH)).getMonitorClass();
@@ -214,6 +213,7 @@ public class Application {
                 systemProps.getProperty(key));
           }
         }
+        // TODO: 2016/11/17 tiny - monitor start
         monitorServer.configure(context);
         monitorServer.start();
       }
@@ -224,8 +224,15 @@ public class Application {
 
   }
 
+  /**
+   * code reading notes start
+   * flume 启动的入口函数
+   *
+   * @author tiny
+   * @email tiny_wcl@163.com
+   * @date 2016/11/15 19:47
+   */
   public static void main(String[] args) {
-
     try {
 
       boolean isZkConfigured = false;
@@ -275,27 +282,33 @@ public class Application {
       }
       Application application = null;
       if (isZkConfigured) {
+        // TODO: 2016/11/15 tiny - 从zookeeper读取配置
         // get options
         String zkConnectionStr = commandLine.getOptionValue('z');
         String baseZkPath = commandLine.getOptionValue('p');
-
         if (reload) {
+          // TODO: 2016/11/15 tiny - 感知配置文件变动
           EventBus eventBus = new EventBus(agentName + "-event-bus");
           List<LifecycleAware> components = Lists.newArrayList();
           PollingZooKeeperConfigurationProvider zookeeperConfigurationProvider =
               new PollingZooKeeperConfigurationProvider(
                   agentName, zkConnectionStr, baseZkPath, eventBus);
+          // TODO: 2016/11/15 tiny - 添加配置组件到待启动列表
           components.add(zookeeperConfigurationProvider);
           application = new Application(components);
+          // TODO: 2016/11/15 tiny - 注册配置变更事件，用于更新配置
           eventBus.register(application);
         } else {
+          // TODO: 2016/11/15 tiny - 只加载一次配置文件
           StaticZooKeeperConfigurationProvider zookeeperConfigurationProvider =
               new StaticZooKeeperConfigurationProvider(
                   agentName, zkConnectionStr, baseZkPath);
           application = new Application();
+          // TODO: 2016/11/15 tiny - 手动处理配置，非EventBus
           application.handleConfigurationEvent(zookeeperConfigurationProvider.getConfiguration());
         }
       } else {
+        // TODO: 2016/11/15 tiny - 本地配置文件
         File configurationFile = new File(commandLine.getOptionValue('f'));
 
         /*
@@ -334,8 +347,10 @@ public class Application {
           application.handleConfigurationEvent(configurationProvider.getConfiguration());
         }
       }
+      // TODO: 2016/11/15 tiny - 启动应用，初始化已添加的PropertiesFileConfigurationProvider
       application.start();
 
+      // TODO tiny - shutdown flume
       final Application appReference = application;
       Runtime.getRuntime().addShutdownHook(new Thread("agent-shutdown-hook") {
         @Override

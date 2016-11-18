@@ -18,21 +18,14 @@
  */
 package org.apache.flume.instrumentation;
 
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.ObjectName;
-
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Used for keeping track of internal metrics using atomic integers</p>
@@ -86,7 +79,9 @@ public abstract class MonitoredCounterGroup {
    */
   public void start() {
 
+    // TODO: 2016/11/17 tiny - visible of testing
     register();
+    // TODO: 2016/11/17 tiny - reset counter, time, etc.
     stopTime.set(0L);
     for (String counter : counterMap.keySet()) {
       counterMap.get(counter).set(0L);

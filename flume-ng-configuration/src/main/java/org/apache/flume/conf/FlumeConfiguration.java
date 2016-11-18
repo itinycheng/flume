@@ -104,6 +104,7 @@ public class FlumeConfiguration {
     // Now iterate thru the agentContext and create agent configs and add them
     // to agentConfigMap
 
+    // TODO: 2016/11/17 tiny - validate agentConfigMap, channel|sink|source不能单独存在
     // validate and remove improperly configured components
     validateConfiguration();
   }
@@ -123,6 +124,7 @@ public class FlumeConfiguration {
       String agentName = it.next();
       AgentConfiguration aconf = agentConfigMap.get(agentName);
 
+      // TODO: 2016/11/17 tiny - validate
       if (!aconf.isValid()) {
         logger.warn("Agent configuration invalid for agent '" + agentName
             + "'. It will be removed.");
@@ -142,6 +144,8 @@ public class FlumeConfiguration {
   }
 
   private boolean addRawProperty(String name, String value) {
+    // TODO: 2016/11/16 tiny - 验证每条配置的合法性
+    // TODO: 2016/11/16 tiny - name => agent.{sources}, agent.{sources}.{r1}.channels，agent.{sinks}.{k1}.channel, agent.{sources}.{r1}.type, etc.
     // Null names and values not supported
     if (name == null || value == null) {
       errors
@@ -175,6 +179,7 @@ public class FlumeConfiguration {
       return false;
     }
 
+    // TODO: 2016/11/16 tiny - {agent-name}
     String agentName = name.substring(0, index);
 
     // Agent name must be specified for all properties
@@ -185,7 +190,7 @@ public class FlumeConfiguration {
               ErrorOrWarning.ERROR));
       return false;
     }
-
+    // TODO: 2016/11/16 tiny - sources..., sinks..., channels...
     String configKey = name.substring(index + 1);
 
     // Configuration key must be specified for every property
@@ -196,9 +201,8 @@ public class FlumeConfiguration {
               ErrorOrWarning.ERROR));
       return false;
     }
-
+    // TODO: 2016/11/16 tiny - agentConfigMap.get("{agent-name}")
     AgentConfiguration aconf = agentConfigMap.get(agentName);
-
     if (aconf == null) {
       aconf = new AgentConfiguration(agentName, errors);
       agentConfigMap.put(agentName, aconf);
@@ -222,6 +226,8 @@ public class FlumeConfiguration {
     private final Map<String, ComponentConfiguration> channelConfigMap;
     private final Map<String, ComponentConfiguration> sinkgroupConfigMap;
 
+    // TODO: 2016/11/17 tiny - DEMO <channels,Map<config-key,value>>
+    // TODO: 2016/11/17 tiny - config-key = {udf-name.{type | tailDir | etc.}}
     private Map<String, Context> sourceContextMap;
     private Map<String, Context> sinkContextMap;
     private Map<String, Context> channelContextMap;
@@ -908,6 +914,7 @@ public class FlumeConfiguration {
 
     private boolean addProperty(String key, String value) {
       // Check for sources
+      // TODO: 2016/11/17 tiny - sources
       if (key.equals(BasicConfigurationConstants.CONFIG_SOURCES)) {
         if (sources == null) {
           sources = value;
@@ -924,6 +931,7 @@ public class FlumeConfiguration {
       }
 
       // Check for sinks
+      // TODO: 2016/11/17 tiny - sinks
       if (key.equals(BasicConfigurationConstants.CONFIG_SINKS)) {
         if (sinks == null) {
           sinks = value;
@@ -939,6 +947,7 @@ public class FlumeConfiguration {
         }
       }
 
+      // TODO: 2016/11/17 tiny - channels
       // Check for channels
       if (key.equals(BasicConfigurationConstants.CONFIG_CHANNELS)) {
         if (channels == null) {
@@ -956,6 +965,7 @@ public class FlumeConfiguration {
         }
       }
 
+      // TODO: 2016/11/17 tiny - sinkgroups
       // Check for sinkgroups
       if (key.equals(BasicConfigurationConstants.CONFIG_SINKGROUPS)) {
         if (sinkgroups == null) {
@@ -972,7 +982,7 @@ public class FlumeConfiguration {
           return false;
         }
       }
-
+      // TODO: 2016/11/17 tiny - sources, component-name -> config-key
       ComponentNameAndConfigKey cnck = parseConfigKey(key,
           BasicConfigurationConstants.CONFIG_SOURCES_PREFIX);
 
@@ -990,6 +1000,7 @@ public class FlumeConfiguration {
         return true;
       }
 
+      // TODO: 2016/11/17 tiny - channels, component-name -> config-key
       cnck = parseConfigKey(key,
           BasicConfigurationConstants.CONFIG_CHANNELS_PREFIX);
 
@@ -1007,6 +1018,7 @@ public class FlumeConfiguration {
         return true;
       }
 
+      // TODO: 2016/11/17 tiny - sinks, component-name -> config-key
       cnck = parseConfigKey(key,
           BasicConfigurationConstants.CONFIG_SINKS_PREFIX);
 
@@ -1027,6 +1039,7 @@ public class FlumeConfiguration {
         return true;
       }
 
+      // TODO: 2016/11/17 tiny - sinkgroups, component-name -> config-key
       cnck = parseConfigKey(key,
           BasicConfigurationConstants.CONFIG_SINKGROUPS_PREFIX);
 
@@ -1043,6 +1056,7 @@ public class FlumeConfiguration {
         return true;
       }
 
+      // TODO: 2016/11/17 tiny - config error
       logger.warn("Invalid property specified: " + key);
       errorList.add(new FlumeConfigurationError(agentName, key,
           FlumeConfigurationErrorType.INVALID_PROPERTY, ErrorOrWarning.ERROR));
@@ -1050,6 +1064,7 @@ public class FlumeConfiguration {
     }
 
     private ComponentNameAndConfigKey parseConfigKey(String key, String prefix) {
+      // TODO: 2016/11/17 tiny - DEMO key = sources.r1.type, prefix = sources.
       // key must start with prefix
       if (!key.startsWith(prefix)) {
         return null;
@@ -1063,7 +1078,9 @@ public class FlumeConfiguration {
         return null;
       }
 
+      // TODO: 2016/11/17 tiny - DEMO name = r1
       String name = key.substring(prefix.length(), index);
+      // TODO: 2016/11/17 tiny - DEMO configKey = type
       String configKey = key.substring(prefix.length() + name.length() + 1);
 
       // name and config key must be non-empty

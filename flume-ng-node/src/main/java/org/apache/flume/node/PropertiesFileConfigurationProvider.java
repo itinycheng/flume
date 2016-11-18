@@ -17,16 +17,16 @@
  */
 package org.apache.flume.node;
 
+import org.apache.flume.conf.FlumeConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Properties;
-
-import org.apache.flume.conf.FlumeConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -183,6 +183,7 @@ public class PropertiesFileConfigurationProvider extends
   public FlumeConfiguration getFlumeConfiguration() {
     BufferedReader reader = null;
     try {
+      // TODO: 2016/11/16 tiny - load properties, build FlumeConfiguration
       reader = new BufferedReader(new FileReader(file));
       Properties properties = new Properties();
       properties.load(reader);

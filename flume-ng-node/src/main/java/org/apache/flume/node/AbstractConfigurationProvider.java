@@ -17,28 +17,12 @@
  */
 package org.apache.flume.node;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-
-import org.apache.flume.Channel;
-import org.apache.flume.ChannelFactory;
-import org.apache.flume.ChannelSelector;
-import org.apache.flume.Context;
-import org.apache.flume.FlumeException;
-import org.apache.flume.Sink;
-import org.apache.flume.SinkFactory;
-import org.apache.flume.SinkProcessor;
-import org.apache.flume.SinkRunner;
-import org.apache.flume.Source;
-import org.apache.flume.SourceFactory;
-import org.apache.flume.SourceRunner;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.flume.*;
 import org.apache.flume.annotations.Disposable;
 import org.apache.flume.channel.ChannelProcessor;
 import org.apache.flume.channel.ChannelSelectorFactory;
@@ -59,11 +43,8 @@ import org.apache.flume.source.DefaultSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.util.*;
+import java.util.Map.Entry;
 
 public abstract class AbstractConfigurationProvider implements ConfigurationProvider {
 
@@ -89,20 +70,24 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
   protected abstract FlumeConfiguration getFlumeConfiguration();
 
   public MaterializedConfiguration getConfiguration() {
+    // TODO: 2016/11/17 tiny - MaterializedConfiguration contains source,sink,channel
     MaterializedConfiguration conf = new SimpleMaterializedConfiguration();
     FlumeConfiguration fconfig = getFlumeConfiguration();
+    // TODO: 2016/11/17 tiny - getAgentConfiguration by agent-name
     AgentConfiguration agentConf = fconfig.getConfigurationFor(getAgentName());
     if (agentConf != null) {
       Map<String, ChannelComponent> channelComponentMap = Maps.newHashMap();
       Map<String, SourceRunner> sourceRunnerMap = Maps.newHashMap();
       Map<String, SinkRunner> sinkRunnerMap = Maps.newHashMap();
       try {
+        // TODO: 2016/11/17 tiny - load component
         loadChannels(agentConf, channelComponentMap);
         loadSources(agentConf, channelComponentMap, sourceRunnerMap);
         loadSinks(agentConf, channelComponentMap, sinkRunnerMap);
         Set<String> channelNames = new HashSet<String>(channelComponentMap.keySet());
         for (String channelName : channelNames) {
           ChannelComponent channelComponent = channelComponentMap.get(channelName);
+          // TODO: 2016/11/17 tiny - remove error channel
           if (channelComponent.components.isEmpty()) {
             LOGGER.warn(String.format("Channel %s has no components connected" +
                 " and has been removed.", channelName));
@@ -115,12 +100,15 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
           } else {
             LOGGER.info(String.format("Channel %s connected to %s",
                 channelName, channelComponent.components.toString()));
+            // TODO: 2016/11/17 tiny - add channel to return-object
             conf.addChannel(channelName, channelComponent.channel);
           }
         }
+        // TODO: 2016/11/17 tiny - add source to return-object
         for (Map.Entry<String, SourceRunner> entry : sourceRunnerMap.entrySet()) {
           conf.addSourceRunner(entry.getKey(), entry.getValue());
         }
+        // TODO: 2016/11/17 tiny - add sink to return-object
         for (Map.Entry<String, SinkRunner> entry : sinkRunnerMap.entrySet()) {
           conf.addSinkRunner(entry.getKey(), entry.getValue());
         }
@@ -141,6 +129,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
     return agentName;
   }
 
+  // TODO: 2016/11/17 tiny - new channel-object, channelComponentMap = <channel-name, Channel>
   private void loadChannels(AgentConfiguration agentConf,
       Map<String, ChannelComponent> channelComponentMap)
           throws InstantiationException {
@@ -172,9 +161,11 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
     for (String chName : channelNames) {
       ComponentConfiguration comp = compMap.get(chName);
       if (comp != null) {
+        // TODO: 2016/11/17 tiny - get or create by component-name
         Channel channel = getOrCreateChannel(channelsNotReused,
             comp.getComponentName(), comp.getType());
         try {
+          // TODO: 2016/11/17 tiny - reload configuration
           Configurables.configure(channel, comp);
           channelComponentMap.put(comp.getComponentName(),
               new ChannelComponent(channel));
@@ -196,6 +187,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
         Channel channel = getOrCreateChannel(channelsNotReused, chName,
             context.getString(BasicConfigurationConstants.CONFIG_TYPE));
         try {
+          // TODO: 2016/11/17 tiny - reload context
           Configurables.configure(channel, context);
           channelComponentMap.put(chName, new ChannelComponent(channel));
           LOGGER.info("Created channel " + chName);
@@ -387,6 +379,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
                 "channel",  sinkName);
             throw new IllegalStateException(msg);
           }
+          // TODO: 2016/11/17 tiny - sink set channel
           sink.setChannel(channelComponent.channel);
           sinks.put(comp.getComponentName(), sink);
           channelComponent.components.add(sinkName);
@@ -492,7 +485,9 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
     }
   }
   private static class ChannelComponent {
+    // TODO: 2016/11/17 tiny - current channel-object
     final Channel channel;
+    // TODO: 2016/11/17 tiny - sink-name, source-name
     final List<String> components;
 
     ChannelComponent(Channel channel) {
@@ -501,6 +496,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
     }
   }
 
+  // TODO: 2016/11/16 tiny - properties to map
   protected Map<String, String> toMap(Properties properties) {
     Map<String, String> result = Maps.newHashMap();
     Enumeration<?> propertyNames = properties.propertyNames();

@@ -17,20 +17,19 @@
  */
 package org.apache.flume.node;
 
-import java.io.File;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Preconditions;
+import com.google.common.eventbus.EventBus;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.flume.CounterGroup;
 import org.apache.flume.lifecycle.LifecycleAware;
 import org.apache.flume.lifecycle.LifecycleState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-import com.google.common.eventbus.EventBus;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class PollingPropertiesFileConfigurationProvider
     extends PropertiesFileConfigurationProvider
@@ -53,10 +52,13 @@ public class PollingPropertiesFileConfigurationProvider
     this.eventBus = eventBus;
     this.file = file;
     this.interval = interval;
+    // TODO: 2016/11/15 tiny - collect config-related metrics
     counterGroup = new CounterGroup();
+    // TODO: 2016/11/16 tiny - 初始化状态
     lifecycleState = LifecycleState.IDLE;
   }
 
+  // TODO: 2016/11/15 tiny - call by LifecycleSupervisor.supervise[MonitorRunnable.run]
   @Override
   public void start() {
     LOGGER.info("Configuration provider starting");
@@ -70,10 +72,10 @@ public class PollingPropertiesFileConfigurationProvider
 
     FileWatcherRunnable fileWatcherRunnable =
         new FileWatcherRunnable(file, counterGroup);
-
+    // TODO: 2016/11/15 tiny - 新建线程监听配置文件变动，interval=30
     executorService.scheduleWithFixedDelay(fileWatcherRunnable, 0, interval,
         TimeUnit.SECONDS);
-
+    // TODO: 2016/11/15 tiny - 变更当前component状态
     lifecycleState = LifecycleState.START;
 
     LOGGER.debug("Configuration provider started");
@@ -125,19 +127,21 @@ public class PollingPropertiesFileConfigurationProvider
     @Override
     public void run() {
       LOGGER.debug("Checking file:{} for changes", file);
-
+      // TODO: 2016/11/16 tiny - file check times
       counterGroup.incrementAndGet("file.checks");
-
+      // TODO: 2016/11/16 tiny - file last modify
       long lastModified = file.lastModified();
 
       if (lastModified > lastChange) {
         LOGGER.info("Reloading configuration file:{}", file);
-
+        // TODO: 2016/11/16 tiny - file load times
         counterGroup.incrementAndGet("file.loads");
 
         lastChange = lastModified;
 
         try {
+          // TODO: 2016/11/16 tiny - post configuration to Application.handleConfigurationEvent
+          // TODO: 2016/11/16 tiny - PropertiesFileConfigurationProvider.getConfiguration()
           eventBus.post(getConfiguration());
         } catch (Exception e) {
           LOGGER.error("Failed to load configuration data. Exception follows.",

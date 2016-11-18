@@ -19,6 +19,12 @@
 
 package org.apache.flume.lifecycle;
 
+import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.flume.FlumeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,13 +32,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.flume.FlumeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class LifecycleSupervisor implements LifecycleAware {
 
@@ -47,19 +46,21 @@ public class LifecycleSupervisor implements LifecycleAware {
   private Purger purger;
   private boolean needToPurge;
 
-  public LifecycleSupervisor() {
-    lifecycleState = LifecycleState.IDLE;
-    supervisedProcesses = new HashMap<LifecycleAware, Supervisoree>();
-    monitorFutures = new HashMap<LifecycleAware, ScheduledFuture<?>>();
-    monitorService = new ScheduledThreadPoolExecutor(10,
-        new ThreadFactoryBuilder().setNameFormat(
-            "lifecycleSupervisor-" + Thread.currentThread().getId() + "-%d")
-            .build());
-    monitorService.setMaximumPoolSize(20);
-    monitorService.setKeepAliveTime(30, TimeUnit.SECONDS);
-    purger = new Purger();
-    needToPurge = false;
-  }
+    // TODO: 2016/11/15 tiny - 10 ~ 20个线程，30s空闲存活时间
+    public LifecycleSupervisor() {
+        lifecycleState = LifecycleState.IDLE;
+        supervisedProcesses = new HashMap<LifecycleAware, Supervisoree>();
+        monitorFutures = new HashMap<LifecycleAware, ScheduledFuture<?>>();
+        monitorService = new ScheduledThreadPoolExecutor(10,
+            new ThreadFactoryBuilder().setNameFormat(
+                "lifecycleSupervisor-" + Thread.currentThread().getId() + "-%d")
+                .build());
+        monitorService.setMaximumPoolSize(20);
+        monitorService.setKeepAliveTime(30, TimeUnit.SECONDS);
+        // TODO: 2016/11/15 tiny - 用于清除已经取消的任务
+        purger = new Purger();
+        needToPurge = false;
+      }
 
   @Override
   public synchronized void start() {
@@ -118,6 +119,8 @@ public class LifecycleSupervisor implements LifecycleAware {
     lifecycleState = LifecycleState.ERROR;
   }
 
+  // TODO: 2016/11/15 tiny - 监督组件lifecycleAware
+  // TODO: 2016/11/15 tiny - lifecycleAware包括channel、sink、source、configuration etc.
   public synchronized void supervise(LifecycleAware lifecycleAware,
       SupervisorPolicy policy, LifecycleState desiredState) {
     if (this.monitorService.isShutdown()
@@ -135,7 +138,7 @@ public class LifecycleSupervisor implements LifecycleAware {
       logger.debug("Supervising service:{} policy:{} desiredState:{}",
           new Object[] { lifecycleAware, policy, desiredState });
     }
-
+    // TODO: 2016/11/15 tiny - 封装当前组件（component）期望状态
     Supervisoree process = new Supervisoree();
     process.status = new Status();
 
@@ -147,11 +150,14 @@ public class LifecycleSupervisor implements LifecycleAware {
     monitorRunnable.lifecycleAware = lifecycleAware;
     monitorRunnable.supervisoree = process;
     monitorRunnable.monitorService = monitorService;
-
+    // TODO: 2016/11/15 tiny - unfinished
     supervisedProcesses.put(lifecycleAware, process);
 
+      // TODO: 2016/11/15 tiny - 上次任务完成3s后执行下次操作
+      // TODO: 2016/11/15 tiny - 1. lifecycleAware = PollingPropertiesFileConfigurationProvider
     ScheduledFuture<?> future = monitorService.scheduleWithFixedDelay(
         monitorRunnable, 0, 3, TimeUnit.SECONDS);
+      // TODO: 2016/11/15 tiny - unfinished
     monitorFutures.put(lifecycleAware, future);
   }
 
@@ -202,13 +208,18 @@ public class LifecycleSupervisor implements LifecycleAware {
 
   }
   public static class MonitorRunnable implements Runnable {
-
+    // TODO: 2016/11/15 tiny - 10 ~ 20线程池，monitorService
     public ScheduledExecutorService monitorService;
+      // TODO: 2016/11/15 tiny - 组件（component）
     public LifecycleAware lifecycleAware;
+      // TODO: 2016/11/15 tiny - 组件期望状态
     public Supervisoree supervisoree;
 
+      // TODO: 2016/11/15 tiny - 根据supervisoree对组件进行start/stop操作
     @Override
     public void run() {
+        // TODO: 2016/11/15 tiny - PollingPropertiesFileConfigurationProvider
+        // TODO: 2016/11/15 tiny - PollingZooKeeperConfigurationProvider
       logger.debug("checking process:{} supervisoree:{}", lifecycleAware,
           supervisoree);
 
@@ -217,7 +228,7 @@ public class LifecycleSupervisor implements LifecycleAware {
       try {
         if (supervisoree.status.firstSeen == null) {
           logger.debug("first time seeing {}", lifecycleAware);
-
+            // TODO: 2016/11/15 tiny - 首次启动
           supervisoree.status.firstSeen = now;
         }
 
@@ -235,6 +246,7 @@ public class LifecycleSupervisor implements LifecycleAware {
 
           supervisoree.status.lastSeenState = lifecycleAware.getLifecycleState();
 
+            // TODO: 2016/11/15 tiny - 当前状态 != 期望状态 ? execute : do nothing
           if (!lifecycleAware.getLifecycleState().equals(
               supervisoree.status.desiredState)) {
 
@@ -246,8 +258,10 @@ public class LifecycleSupervisor implements LifecycleAware {
             switch (supervisoree.status.desiredState) {
               case START:
                 try {
+                  // TODO: 2016/11/15 tiny - start
                   lifecycleAware.start();
                 } catch (Throwable e) {
+                    // TODO: 2016/11/15 tiny - catch 任何可捕获的异常
                   logger.error("Unable to start " + lifecycleAware
                       + " - Exception follows.", e);
                   if (e instanceof Error) {
@@ -272,11 +286,13 @@ public class LifecycleSupervisor implements LifecycleAware {
                       // proceed.
                     }
                   }
+                  // TODO: 2016/11/15 tiny - 失败次数
                   supervisoree.status.failures++;
                 }
                 break;
               case STOP:
                 try {
+                  // TODO: 2016/11/15 tiny - stop
                   lifecycleAware.stop();
                 } catch (Throwable e) {
                   logger.error("Unable to stop " + lifecycleAware
@@ -291,7 +307,7 @@ public class LifecycleSupervisor implements LifecycleAware {
                 logger.warn("I refuse to acknowledge {} as a desired state",
                     supervisoree.status.desiredState);
             }
-
+            // TODO: 2016/11/15 tiny - policy 默认为AlwaysRestartPolicy
             if (!supervisoree.policy.isValid(lifecycleAware, supervisoree.status)) {
               logger.error(
                   "Policy {} of {} has been violated - supervisor should exit!",

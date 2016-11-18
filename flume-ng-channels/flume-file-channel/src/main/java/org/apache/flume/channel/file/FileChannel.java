@@ -85,6 +85,8 @@ public class FileChannel extends BasicChannelSemantics {
   private long minimumRequiredSpace;
   private File checkpointDir;
   private File backupCheckpointDir;
+
+  // TODO: 2016/11/17 tiny - dataDirs = 用于写入log数据的目录
   private File[] dataDirs;
   private Log log;
   private volatile boolean open;
@@ -114,6 +116,7 @@ public class FileChannel extends BasicChannelSemantics {
   @Override
   public void configure(Context context) {
 
+    // TODO: 2016/11/17 tiny - 双重checkpoint dir
     useDualCheckpoints = context.getBoolean(
         FileChannelConfiguration.USE_DUAL_CHECKPOINTS,
         FileChannelConfiguration.DEFAULT_USE_DUAL_CHECKPOINTS);
@@ -135,7 +138,7 @@ public class FileChannel extends BasicChannelSemantics {
         Splitter.on(",").trimResults().omitEmptyStrings().split(
             context.getString(FileChannelConfiguration.DATA_DIRS,
                 homePath + "/.flume/file-channel/data")), String.class);
-
+    // TODO: 2016/11/17 tiny - checkpoint dir
     checkpointDir = new File(strCheckpointDir);
 
     if (useDualCheckpoints) {
@@ -143,6 +146,7 @@ public class FileChannel extends BasicChannelSemantics {
           "Dual checkpointing is enabled, but the backup directory is not set. " +
               "Please set " + FileChannelConfiguration.BACKUP_CHECKPOINT_DIR + " " +
               "to enable dual checkpointing");
+      // TODO: 2016/11/17 tiny - 备用 checkpoint dir
       backupCheckpointDir = new File(strBackupCheckpointDir);
       /*
        * If the backup directory is the same as the checkpoint directory,
@@ -154,12 +158,13 @@ public class FileChannel extends BasicChannelSemantics {
               "directory and the checkpoint directory are " +
               "configured to be the same.");
     }
-
+    // TODO: 2016/11/17 tiny - 写入log的目录
     dataDirs = new File[strDataDirs.length];
     for (int i = 0; i < strDataDirs.length; i++) {
       dataDirs[i] = new File(strDataDirs[i]);
     }
 
+    // TODO: 2016/11/17 tiny - 容量，默认1000,000
     capacity = context.getInteger(FileChannelConfiguration.CAPACITY,
         FileChannelConfiguration.DEFAULT_CAPACITY);
     if (capacity <= 0) {
@@ -167,7 +172,7 @@ public class FileChannel extends BasicChannelSemantics {
       LOG.warn("Invalid capacity specified, initializing channel to "
           + "default capacity of {}", capacity);
     }
-
+    // TODO: 2016/11/17 tiny - unfinished
     keepAlive =
         context.getInteger(FileChannelConfiguration.KEEP_ALIVE,
             FileChannelConfiguration.DEFAULT_KEEP_ALIVE);
@@ -187,6 +192,7 @@ public class FileChannel extends BasicChannelSemantics {
         "File Channel transaction capacity cannot be greater than the " +
             "capacity of the channel.");
 
+    // TODO: 2016/11/17 tiny - 检出间隔
     checkpointInterval =
         context.getLong(FileChannelConfiguration.CHECKPOINT_INTERVAL,
             FileChannelConfiguration.DEFAULT_CHECKPOINT_INTERVAL);
@@ -210,14 +216,17 @@ public class FileChannel extends BasicChannelSemantics {
             FileChannelConfiguration.DEFAULT_MINIMUM_REQUIRED_SPACE),
         FileChannelConfiguration.FLOOR_MINIMUM_REQUIRED_SPACE);
 
+    // TODO: 2016/11/17 tiny - unfinished
     useLogReplayV1 = context.getBoolean(
         FileChannelConfiguration.USE_LOG_REPLAY_V1,
         FileChannelConfiguration.DEFAULT_USE_LOG_REPLAY_V1);
 
+    // TODO: 2016/11/17 tiny - unfinished
     useFastReplay = context.getBoolean(
         FileChannelConfiguration.USE_FAST_REPLAY,
         FileChannelConfiguration.DEFAULT_USE_FAST_REPLAY);
 
+    // TODO: 2016/11/17 tiny - 数据加密
     Context encryptionContext = new Context(
         context.getSubProperties(EncryptionConfiguration.ENCRYPTION_PREFIX +
             "."));
@@ -249,9 +258,11 @@ public class FileChannel extends BasicChannelSemantics {
               "key provider name is not.");
     }
 
+    // TODO: 2016/11/17 tiny - unfinished
     fsyncPerTransaction = context.getBoolean(FileChannelConfiguration
         .FSYNC_PER_TXN, FileChannelConfiguration.DEFAULT_FSYNC_PRE_TXN);
 
+    // TODO: 2016/11/17 tiny - unfinished
     fsyncInterval = context.getInteger(FileChannelConfiguration
         .FSYNC_INTERVAL, FileChannelConfiguration.DEFAULT_FSYNC_INTERVAL);
 
@@ -261,6 +272,7 @@ public class FileChannel extends BasicChannelSemantics {
     if (queueRemaining == null) {
       queueRemaining = new Semaphore(capacity, true);
     }
+    // TODO: 2016/11/17 tiny - log for checkpoint
     if (log != null) {
       log.setCheckpointInterval(checkpointInterval);
       log.setMaxFileSize(maxFileSize);
@@ -294,7 +306,11 @@ public class FileChannel extends BasicChannelSemantics {
       builder.setFsyncPerTransaction(fsyncPerTransaction);
       builder.setFsyncInterval(fsyncInterval);
       builder.setCheckpointOnClose(checkpointOnClose);
+      // TODO: 2016/11/17 tiny - build() contains checkpoint thread start
+      // TODO: 2016/11/18 tiny - log包含checkpoint文件的所有相关操作
       log = builder.build();
+      // TODO: 2016/11/17 tiny - log.replay() unfinished
+      // TODO: 2016/11/18 tiny - 用于flume启动/事故恢复时的上次现场恢复，
       log.replay();
       open = true;
 
@@ -311,6 +327,7 @@ public class FileChannel extends BasicChannelSemantics {
         throw (Error) t;
       }
     }
+    // TODO: 2016/11/17 tiny - 初始化channel counter
     if (open) {
       channelCounter.start();
       channelCounter.setChannelSize(getDepth());

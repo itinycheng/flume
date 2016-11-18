@@ -316,20 +316,24 @@ public class Log {
     }
     locks = Maps.newHashMap();
     try {
+      // TODO: 2016/11/17 tiny - 锁定checkpoint文件夹
       lock(checkpointDir);
       if (useDualCheckpoints) {
         lock(backupCheckpointDir);
       }
+      // TODO: 2016/11/17 tiny - 锁定log写入的文件
       for (File logDir : logDirs) {
         lock(logDir);
       }
     } catch (IOException e) {
+      // TODO: 2016/11/17 tiny - unlock file
       unlock(checkpointDir);
       for (File logDir : logDirs) {
         unlock(logDir);
       }
       throw e;
     }
+    // TODO: 2016/11/17 tiny - 加密配置
     if (encryptionKeyProvider != null && encryptionKeyAlias != null &&
         encryptionCipherProvider != null) {
       LOGGER.info("Encryption is enabled with encryptionKeyProvider = " +
@@ -366,6 +370,7 @@ public class Log {
     workerExecutor = Executors.newSingleThreadScheduledExecutor(new
         ThreadFactoryBuilder().setNameFormat("Log-BackgroundWorker-" + name)
         .build());
+    // TODO: 2016/11/17 tiny - checkpointInterval default = 30s, 用于write checkpoint的线程
     workerExecutor.scheduleWithFixedDelay(new BackgroundWorker(this),
         this.checkpointInterval, this.checkpointInterval,
         TimeUnit.MILLISECONDS);
@@ -1015,11 +1020,13 @@ public class Log {
    */
   private Boolean writeCheckpoint(Boolean force) throws Exception {
     boolean checkpointCompleted = false;
+    // TODO: 2016/11/17 tiny - 校验checkpoint dir是否有足够的空间
     long usableSpace = checkpointDir.getUsableSpace();
     if (usableSpace <= minimumRequiredSpace) {
       throw new IOException("Usable space exhausted, only " + usableSpace +
           " bytes remaining, required " + minimumRequiredSpace + " bytes");
     }
+    // TODO: 2016/11/17 tiny - lock write
     lockExclusive();
     SortedSet<Integer> logFileRefCountsAll = null;
     SortedSet<Integer> logFileRefCountsActive = null;
@@ -1044,6 +1051,7 @@ public class Log {
           LogFile.MetaDataWriter writer =
               LogFileFactory.getMetaDataWriter(logFile, logFileID);
           try {
+            // TODO: 2016/11/17 tiny - 写入变更到文件
             writer.markCheckpoint(logWriter.position(), logWriteOrderID);
           } finally {
             writer.close();
@@ -1217,7 +1225,9 @@ public class Log {
     @Override
     public void run() {
       try {
+        // TODO: 2016/11/17 tiny - 写checkpoint到dir
         if (log.open) {
+          // TODO: 2016/11/17 tiny - log.writeCheckpoint() unfinished
           log.writeCheckpoint();
         }
       } catch (IOException e) {
