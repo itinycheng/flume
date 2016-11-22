@@ -62,6 +62,7 @@ public class MemoryChannel extends BasicChannelSemantics {
 
   private class MemoryTransaction extends BasicTransactionSemantics {
     private LinkedBlockingDeque<Event> takeList;
+    // TODO: 2016/11/18 tiny - 来自source的数据放置到这里
     private LinkedBlockingDeque<Event> putList;
     private final ChannelCounter channelCounter;
     private int putByteCounter = 0;

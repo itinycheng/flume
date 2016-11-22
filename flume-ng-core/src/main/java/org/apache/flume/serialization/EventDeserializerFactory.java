@@ -37,7 +37,7 @@ public class EventDeserializerFactory {
 
   public static EventDeserializer getInstance(
       String deserializerType, Context context, ResettableInputStream in) {
-
+    // TODO: 2016/11/18 tiny - 通过deserializerType找到Class，然后newInstance，将context、in传入初始化deserializer对象
     Preconditions.checkNotNull(deserializerType,
         "serializer type must not be null");
 

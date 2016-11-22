@@ -29,13 +29,7 @@ import org.apache.flume.FlumeException;
 import org.apache.flume.annotations.InterfaceAudience;
 import org.apache.flume.annotations.InterfaceStability;
 import org.apache.flume.event.EventBuilder;
-import org.apache.flume.serialization.DecodeErrorPolicy;
-import org.apache.flume.serialization.DurablePositionTracker;
-import org.apache.flume.serialization.EventDeserializer;
-import org.apache.flume.serialization.EventDeserializerFactory;
-import org.apache.flume.serialization.PositionTracker;
-import org.apache.flume.serialization.ResettableFileInputStream;
-import org.apache.flume.serialization.ResettableInputStream;
+import org.apache.flume.serialization.*;
 import org.apache.flume.source.SpoolDirectorySourceConfigurationConstants;
 import org.apache.flume.source.SpoolDirectorySourceConfigurationConstants.ConsumeOrder;
 import org.apache.flume.tools.PlatformDetect;
@@ -51,11 +45,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -163,6 +153,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
 
     // Do a canary test to make sure we have access to spooling directory
     try {
+      // TODO: 2016/11/18 tiny - testing flume file permissions
       File canary = File.createTempFile("flume-spooldir-perm-check-", ".canary",
           spoolDirectory);
       Files.write(canary.toPath(), "testing flume file permissions\n".getBytes());
@@ -197,6 +188,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
 
     // if relative path, treat as relative to spool directory
     if (!trackerDirectory.isAbsolute()) {
+      // TODO: 2016/11/18 tiny - 依据spoolDirectory取相对路径
       trackerDirectory = new File(spoolDirectory, trackerDirPath);
     }
 
@@ -250,6 +242,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
         @Override
         public FileVisitResult visitFile(Path candidate, BasicFileAttributes attrs)
             throws IOException {
+          // TODO: 2016/11/18 tiny - 合法的文件加入可选举列表
           String fileName = candidate.getFileName().toString();
           if (!fileName.endsWith(completedSuffix) &&
               !fileName.startsWith(".") &&
@@ -303,6 +296,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
             "commit is outstanding.");
       }
       logger.info("Last read was never committed - resetting mark position.");
+      // TODO: 2016/11/18 tiny - 重置offset
       currentFile.get().getDeserializer().reset();
     } else {
       // Check if new files have arrived since last call
@@ -314,7 +308,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
         return Collections.emptyList();
       }
     }
-
+    // TODO: 2016/11/18 tiny - 读取指定数量的数据
     List<Event> events = readDeserializerEvents(numEvents);
 
     /* It's possible that the last read took us just up to a file boundary.
@@ -330,10 +324,11 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
       }
       events = readDeserializerEvents(numEvents);
     }
-
     fillHeader(events);
 
+    // TODO: 2016/11/18 tiny - 已读取但未提交
     committed = false;
+    // TODO: 2016/11/18 tiny - set last file read
     lastFileRead = currentFile;
     return events;
   }
@@ -520,20 +515,23 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
     if (consumeOrder != ConsumeOrder.RANDOM ||
         candidateFileIter == null ||
         !candidateFileIter.hasNext()) {
+      // TODO: 2016/11/18 tiny - 聚集可读取的文件
       candidateFiles = getCandidateFiles(spoolDirectory.toPath());
       listFilesCount++;
       candidateFileIter = candidateFiles.iterator();
     }
-
+    // TODO: 2016/11/18 tiny - 没,则返回空选项
     if (!candidateFileIter.hasNext()) { // No matching file in spooling directory.
       return Optional.absent();
     }
 
+    // TODO: 2016/11/18 tiny - 按照规则选取待读取文件
     File selectedFile = candidateFileIter.next();
     if (consumeOrder == ConsumeOrder.RANDOM) { // Selected file is random.
       return openFile(selectedFile);
     } else if (consumeOrder == ConsumeOrder.YOUNGEST) {
       for (File candidateFile : candidateFiles) {
+        // TODO: 2016/11/18 tiny - 选择'修改时间'最大的文件
         long compare = selectedFile.lastModified() -
             candidateFile.lastModified();
         if (compare == 0) { // ts is same pick smallest lexicographically.
@@ -543,6 +541,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
         }
       }
     } else { // default order is OLDEST
+      // TODO: 2016/11/18 tiny - 默认，选择'修改时间'最小的文件
       for (File candidateFile : candidateFiles) {
         long compare = selectedFile.lastModified() -
             candidateFile.lastModified();
@@ -577,6 +576,7 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
     try {
       // roll the meta file, if needed
       String nextPath = file.getPath();
+      // TODO: 2016/11/18 tiny - create PositionTracker metaFile
       PositionTracker tracker =
           DurablePositionTracker.getInstance(metaFile, nextPath);
       if (!tracker.getTarget().equals(nextPath)) {
@@ -594,9 +594,10 @@ public class ReliableSpoolingFileEventReader implements ReliableEventReader {
           new ResettableFileInputStream(file, tracker,
               ResettableFileInputStream.DEFAULT_BUF_SIZE, inputCharset,
               decodeErrorPolicy);
+      // TODO: 2016/11/18 tiny - 包含输入流、序列化类型：default LineDeserializer、
       EventDeserializer deserializer =
           EventDeserializerFactory.getInstance(deserializerType, deserializerContext, in);
-
+      // TODO: 2016/11/18 tiny - 封装file，deserializer到同一对象并返回
       return Optional.of(new FileInfo(file, deserializer));
     } catch (FileNotFoundException e) {
       // File could have been deleted in the interim

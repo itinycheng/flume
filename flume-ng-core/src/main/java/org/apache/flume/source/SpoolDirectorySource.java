@@ -50,19 +50,25 @@ public class SpoolDirectorySource extends AbstractSource
   private static final Logger logger = LoggerFactory.getLogger(SpoolDirectorySource.class);
 
   /* Config options */
+  // TODO: 2016/11/18 tiny - 文件读取完成后的添加后缀
   private String completedSuffix;
+  // TODO: 2016/11/18 tiny - 数据存储文件
   private String spoolDirectory;
   private boolean fileHeader;
   private String fileHeaderKey;
   private boolean basenameHeader;
   private String basenameHeaderKey;
+  // TODO: 2016/11/18 tiny - default 100
   private int batchSize;
   private String includePattern;
   private String ignorePattern;
+  // TODO: 2016/11/18 tiny - metadata store, 例: 读取数据的offset, etc.
   private String trackerDirPath;
   private String deserializerType;
+  // TODO: 2016/11/18 tiny - conf.properties.get('deserializer.')
   private Context deserializerContext;
   private String deletePolicy;
+  // TODO: 2016/11/18 tiny - default utf-8
   private String inputCharset;
   private DecodeErrorPolicy decodeErrorPolicy;
   private volatile boolean hasFatalError = false;
@@ -73,8 +79,11 @@ public class SpoolDirectorySource extends AbstractSource
   private boolean backoff = true;
   private boolean hitChannelException = false;
   private boolean hitChannelFullException = false;
+  // TODO: 2016/11/18 tiny - default 4000;
   private int maxBackoff;
+  // TODO: 2016/11/18 tiny - 默认消费顺序按时间升序
   private ConsumeOrder consumeOrder;
+  // TODO: 2016/11/18 tiny - default 500
   private int pollDelay;
   private boolean recursiveDirectorySearch;
 
@@ -157,6 +166,7 @@ public class SpoolDirectorySource extends AbstractSource
         DEFAULT_BASENAME_HEADER);
     basenameHeaderKey = context.getString(BASENAME_HEADER_KEY,
         DEFAULT_BASENAME_HEADER_KEY);
+
     batchSize = context.getInteger(BATCH_SIZE,
         DEFAULT_BATCH_SIZE);
     inputCharset = context.getString(INPUT_CHARSET, DEFAULT_INPUT_CHARSET);
@@ -171,7 +181,6 @@ public class SpoolDirectorySource extends AbstractSource
     deserializerType = context.getString(DESERIALIZER, DEFAULT_DESERIALIZER);
     deserializerContext = new Context(context.getSubProperties(DESERIALIZER +
         "."));
-
     consumeOrder = ConsumeOrder.valueOf(context.getString(CONSUME_ORDER,
         DEFAULT_CONSUME_ORDER.toString()).toUpperCase(Locale.ENGLISH));
 
@@ -255,7 +264,9 @@ public class SpoolDirectorySource extends AbstractSource
           sourceCounter.incrementAppendBatchReceivedCount();
 
           try {
+            // TODO: 2016/11/18 tiny - get channel and process event
             getChannelProcessor().processEventBatch(events);
+            // TODO: 2016/11/18 tiny - read position mark
             reader.commit();
           } catch (ChannelFullException ex) {
             logger.warn("The channel is full, and cannot write data now. The " +
@@ -263,6 +274,7 @@ public class SpoolDirectorySource extends AbstractSource
                 " milliseconds");
             hitChannelFullException = true;
             backoffInterval = waitAndGetNewBackoffInterval(backoffInterval);
+            // TODO: 2016/11/18 tiny - if thread isn't interrupt, do continue;
             continue;
           } catch (ChannelException ex) {
             logger.warn("The channel threw an exception, and cannot write data now. The " +

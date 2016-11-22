@@ -19,12 +19,12 @@
 
 package org.apache.flume;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.flume.lifecycle.LifecycleAware;
 import org.apache.flume.lifecycle.LifecycleState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <p>
@@ -74,6 +74,7 @@ public class SinkRunner implements LifecycleAware {
 
   @Override
   public void start() {
+    // TODO: 2016/11/21 tiny -
     SinkProcessor policy = getPolicy();
 
     policy.start();

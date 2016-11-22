@@ -66,6 +66,7 @@ public class LineDeserializer implements EventDeserializer {
    */
   @Override
   public Event readEvent() throws IOException {
+    // TODO: 2016/11/18 tiny - 读取一样并封装成Event
     ensureOpen();
     String line = readLine();
     if (line == null) {
@@ -83,6 +84,7 @@ public class LineDeserializer implements EventDeserializer {
    */
   @Override
   public List<Event> readEvents(int numEvents) throws IOException {
+    // TODO: 2016/11/18 tiny - 读取指定数量的数据
     ensureOpen();
     List<Event> events = Lists.newLinkedList();
     for (int i = 0; i < numEvents; i++) {

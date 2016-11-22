@@ -20,25 +20,18 @@ package org.apache.flume.channel;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import org.apache.flume.*;
+import org.apache.flume.conf.Configurable;
+import org.apache.flume.interceptor.Interceptor;
+import org.apache.flume.interceptor.InterceptorBuilderFactory;
+import org.apache.flume.interceptor.InterceptorChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.flume.Channel;
-import org.apache.flume.ChannelException;
-import org.apache.flume.ChannelSelector;
-import org.apache.flume.Context;
-import org.apache.flume.Event;
-import org.apache.flume.FlumeException;
-import org.apache.flume.interceptor.Interceptor;
-import org.apache.flume.interceptor.InterceptorChain;
-import org.apache.flume.Transaction;
-import org.apache.flume.conf.Configurable;
-import org.apache.flume.interceptor.InterceptorBuilderFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A channel processor exposes operations to put {@link Event}s into
@@ -143,6 +136,7 @@ public class ChannelProcessor implements Configurable {
    * @throws ChannelException when a write to a required channel fails.
    */
   public void processEventBatch(List<Event> events) {
+    // TODO: 2016/11/18 tiny - source获取对应的processor 将封装好的event传递给channel
     Preconditions.checkNotNull(events, "Event list must not be null");
 
     events = interceptorChain.intercept(events);
@@ -154,8 +148,9 @@ public class ChannelProcessor implements Configurable {
         new LinkedHashMap<Channel, List<Event>>();
 
     for (Event event : events) {
+      // TODO: 2016/11/18 tiny - reqChannels：event写入channels报错必须有回执信息到source
       List<Channel> reqChannels = selector.getRequiredChannels(event);
-
+      // TODO: 2016/11/18 tiny - 一个source可对应多个channel
       for (Channel ch : reqChannels) {
         List<Event> eventQueue = reqChannelQueue.get(ch);
         if (eventQueue == null) {
@@ -165,6 +160,7 @@ public class ChannelProcessor implements Configurable {
         eventQueue.add(event);
       }
 
+      // TODO: 2016/11/18 tiny - optChannels：不关注event写入channel是否成功
       List<Channel> optChannels = selector.getOptionalChannels(event);
 
       for (Channel ch : optChannels) {
@@ -183,6 +179,7 @@ public class ChannelProcessor implements Configurable {
       Transaction tx = reqChannel.getTransaction();
       Preconditions.checkNotNull(tx, "Transaction object must not be null");
       try {
+        // TODO: 2016/11/18 tiny - Transaction begin -> put -> commit
         tx.begin();
 
         List<Event> batch = reqChannelQueue.get(reqChannel);
@@ -193,6 +190,7 @@ public class ChannelProcessor implements Configurable {
 
         tx.commit();
       } catch (Throwable t) {
+        // TODO: 2016/11/18 tiny - 捕获所有异常并回滚
         tx.rollback();
         if (t instanceof Error) {
           LOG.error("Error while writing to required channel: " + reqChannel, t);

@@ -283,7 +283,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
 
           ChannelSelector selector = ChannelSelectorFactory.create(
               sourceChannels, selectorConfig);
-
+          // TODO: 2016/11/18 tiny - source use channelProcessor to choose channel
           ChannelProcessor channelProcessor = new ChannelProcessor(selector);
           Configurables.configure(channelProcessor, config);
 

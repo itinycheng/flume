@@ -139,6 +139,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
   @Override
   public Status process() throws EventDeliveryException {
+    // TODO: 2016/11/18 tiny - transaction.begin -> -> channel.take -> producer.send -> producer.flush -> transaction.commit
     Status result = Status.READY;
     Channel channel = getChannel();
     Transaction transaction = null;
@@ -209,6 +210,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
             record = new ProducerRecord<String, byte[]>(eventTopic, eventKey,
                 serializeEvent(event, useAvroEventFormat));
           }
+          // TODO: 2016/11/18 tiny - 消息发送
           kafkaFutures.add(producer.send(record, new SinkCallback(startTime)));
         } catch (NumberFormatException ex) {
           throw new EventDeliveryException("Non integer partition id specified", ex);
@@ -226,6 +228,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
       // publish batch and commit.
       if (processedEvents > 0) {
         for (Future<RecordMetadata> future : kafkaFutures) {
+          // TODO: 2016/11/18 tiny - wait for success
           future.get();
         }
         long endTime = System.nanoTime();
