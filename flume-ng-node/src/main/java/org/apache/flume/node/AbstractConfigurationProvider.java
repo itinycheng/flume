@@ -72,10 +72,12 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
   public MaterializedConfiguration getConfiguration() {
     // TODO: 2016/11/17 tiny - MaterializedConfiguration contains source,sink,channel
     MaterializedConfiguration conf = new SimpleMaterializedConfiguration();
+    // TODO: 2016/11/25 tiny - properties load and parse
     FlumeConfiguration fconfig = getFlumeConfiguration();
     // TODO: 2016/11/17 tiny - getAgentConfiguration by agent-name
     AgentConfiguration agentConf = fconfig.getConfigurationFor(getAgentName());
     if (agentConf != null) {
+      // TODO: 2016/11/25 tiny - new instance by configuration
       Map<String, ChannelComponent> channelComponentMap = Maps.newHashMap();
       Map<String, SourceRunner> sourceRunnerMap = Maps.newHashMap();
       Map<String, SinkRunner> sinkRunnerMap = Maps.newHashMap();
@@ -187,7 +189,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
         Channel channel = getOrCreateChannel(channelsNotReused, chName,
             context.getString(BasicConfigurationConstants.CONFIG_TYPE));
         try {
-          // TODO: 2016/11/17 tiny - reload context
+          // TODO: 2016/11/17 tiny - load context into channel
           Configurables.configure(channel, context);
           channelComponentMap.put(chName, new ChannelComponent(channel));
           LOGGER.info("Created channel " + chName);
@@ -317,6 +319,7 @@ public abstract class AbstractConfigurationProvider implements ConfigurationProv
         try {
           Configurables.configure(source, context);
           List<Channel> sourceChannels = new ArrayList<Channel>();
+          // TODO: 2016/11/25 tiny - 获取当前source对应的channel，根据channel name匹配
           String[] channelNames = context.getString(
               BasicConfigurationConstants.CONFIG_CHANNELS).split("\\s+");
           for (String chName : channelNames) {

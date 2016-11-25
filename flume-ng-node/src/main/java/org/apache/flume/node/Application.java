@@ -273,7 +273,7 @@ public class Application {
         new HelpFormatter().printHelp("flume-ng agent", options, true);
         return;
       }
-
+      // TODO: 2016/11/25 tiny - 启动某个agentName对应的sink, channel, source, etc.
       String agentName = commandLine.getOptionValue('n');
       boolean reload = !commandLine.hasOption("no-reload-conf");
 

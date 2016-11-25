@@ -60,6 +60,7 @@ public class FlumeConfiguration {
 
   private static final Logger logger = LoggerFactory.getLogger(FlumeConfiguration.class);
 
+  // TODO: 2016/11/25 tiny - Map<agentName, AgentConfiguration>, eg: 'agent1' is the agentName of 'agent1.sources.r2a.type';
   private final Map<String, AgentConfiguration> agentConfigMap;
   private final LinkedList<FlumeConfigurationError> errors;
   public static final String NEWLINE = System.getProperty("line.separator", "\n");
@@ -214,11 +215,15 @@ public class FlumeConfiguration {
   }
 
   public static class AgentConfiguration {
-
+    // TODO: 2016/11/25 tiny - eg: "agent1" is the agentName of "agent1.sources.r2a.type";
     private final String agentName;
+    // TODO: 2016/11/25 tiny - value of the "agent.sources"
     private String sources;
+    // TODO: 2016/11/25 tiny - value of the "agent.sinks"
     private String sinks;
+    // TODO: 2016/11/25 tiny - value of the "agent.channels"
     private String channels;
+    // TODO: 2016/11/25 tiny - value of the "agent.sinkgroups"
     private String sinkgroups;
 
     private final Map<String, ComponentConfiguration> sourceConfigMap;
@@ -226,11 +231,14 @@ public class FlumeConfiguration {
     private final Map<String, ComponentConfiguration> channelConfigMap;
     private final Map<String, ComponentConfiguration> sinkgroupConfigMap;
 
-    // TODO: 2016/11/17 tiny - DEMO <channels,Map<config-key,value>>
     // TODO: 2016/11/17 tiny - config-key = {udf-name.{type | tailDir | etc.}}
+    // TODO: 2016/11/25 tiny - eg : if "agent.sources.r15.channels" -> "r15" is the key of "sourceContextMap"
     private Map<String, Context> sourceContextMap;
+    // TODO: 2016/11/25 tiny - same as "sourceContextMap"
     private Map<String, Context> sinkContextMap;
+    // TODO: 2016/11/25 tiny - same as "sourceContextMap"
     private Map<String, Context> channelContextMap;
+    // TODO: 2016/11/25 tiny - same as "sourceContextMap"
     private Map<String, Context> sinkGroupContextMap;
 
     private Set<String> sinkSet;

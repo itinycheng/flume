@@ -33,6 +33,7 @@ import com.google.common.collect.Maps;
  */
 public class Context {
 
+  // TODO: 2016/11/25 tiny - DEMO Map("type" -> "org.apache.flume.channel.file.FileChannel","checkpointDir" -> "../checkpoint",...)
   private Map<String, String> parameters;
 
   public Context() {
